@@ -1,3 +1,7 @@
+/****************************
+     Canny edge detection
+*****************************/
+
 #include <iostream>
 #include <bits/stdc++.h>
 #include "opencv2/core/core.hpp"
@@ -5,6 +9,7 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <opencv2/objdetect/objdetect.hpp>
+#include <math.h>
 
 using namespace cv; 
 using namespace std; 
@@ -15,8 +20,8 @@ int main()
 	Mat img = imread("1.jpg");
 
 	// Displaying image
-	imshow("Original Image",img);
-	waitKey(0);
+	//imshow("Original Image",img);
+	//waitKey(0);
 
 	// Converting to grayscale
 	Mat img_gray;
@@ -26,87 +31,121 @@ int main()
 	imshow("Original Image",img_gray);
 	waitKey(0);
 
-	cout<<"Number of columns:"<< img_gray.cols<<endl;
+	
 	int cols = img_gray.cols;
-	cout<<"Number of rows:"<< img_gray.rows<<endl;
 	int rows = img_gray.rows;
 
 	// Creating sobel operator in x direction
 	int sobel_x[3][3] = {-1,0,1,-2,0,2,-1,0,1};
-	for(int i=0; i<3; i++)
-	{
-		for(int j=0; j<3; j++)
-			{ cout<<sobel_x[i][j]<<"  "; }
-
-		cout<<endl;
-	}
-
 	// Creating sobel operator in y direction
 	int sobel_y[3][3] = {1,2,1,0,0,0,-1,-2,-1};
 
-	Mat gradient = img_gray.clone()	;
-	imshow("grad",grad);
+
+	int radius = 1;
+	
+	// Handle border issues
+    Mat _src;
+    copyMakeBorder(img_gray, _src, radius, radius, radius, radius, BORDER_REFLECT101);
+
+    // Create output matrix
+    Mat gradient_x = img_gray.clone();
+    Mat gradient_y = img_gray.clone();
+    Mat gradient_f = img_gray.clone();
+
+    int max=0;
+
+	// Conrrelation loop in x direction 
+    
+    // Iterate on image 
+    for (int r = radius; r < _src.rows - radius; ++r)
+    {
+        for (int c = radius; c < _src.cols - radius; ++c)
+        {
+            int s = 0;
+
+            // Iterate on kernel
+            for (int i = -radius; i <= radius; ++i)
+            {
+                for (int j = -radius; j <= radius; ++j)
+                {
+                    s += _src.at<uchar>(r + i, c + j) * sobel_x[i + radius][j + radius];
+                }
+            }
+            gradient_x.at<uchar>(r - radius, c - radius) = s/8;
+
+            /*if(s>200)
+            	gradient.at<uchar>(r - radius, c - radius) = 255;
+            else
+              	gradient.at<uchar>(r - radius, c - radius) = 0;
+            */    
+        }
+    }
+
+    // Conrrelation loop in y direction 
+    
+    // Iterate on image 
+    for (int r = radius; r < _src.rows - radius; ++r)
+    {
+        for (int c = radius; c < _src.cols - radius; ++c)
+        {
+            int s = 0;
+
+            // Iterate on kernel
+            for (int i = -radius; i <= radius; ++i)
+            {
+                for (int j = -radius; j <= radius; ++j)
+                {
+                    s += _src.at<uchar>(r + i, c + j) * sobel_y[i + radius][j + radius];
+                }
+            }
+            if(s>max)
+                max=s;
+            gradient_y.at<uchar>(r - radius, c - radius) = s/8;
+
+            /*if(s>200)
+                gradient.at<uchar>(r - radius, c - radius) = 255;
+            else
+                gradient.at<uchar>(r - radius, c - radius) = 0;
+            */    
+        }
+    }
+
+    ///cout<<endl<<"max:"<<max;
+    //cout<<img_gray.rows;
+    //cout<<endl<<_src.rows;
+    cout<<endl<<gradient_x.rows;
+    cout<<endl<<gradient_y.rows;
+    cout<<endl<<gradient_y.cols;
+    cout<<endl<<gradient_f.rows;
+    cout<<endl<<gradient_f.cols;
+    
+    
+	//Calculating gradient magnitude
+    for(int i=0; i<gradient_f.rows; i++)
+    {
+        for(int j=0; j<gradient_f.cols; j++)
+        {
+            gradient_f.at<uchar>(i,j) = sqrt( pow(gradient_x.at<uchar>(i,j),2) + pow(gradient_y.at<uchar>(i,j),2) );  
+        
+            if(gradient_f.at<uchar>(i,j) >100)
+                gradient_f.at<uchar>(i,j) = 0;
+            else
+                gradient_f.at<uchar>(i,j) = 0;
+        }
+    }
+    
+    cout<<endl<<"Max:"<<max;
+
+    imshow("grad x",gradient_x);
 	waitKey(0);
 
-	int rows_kernel = 3;
-	int cols_kernel = 3;
-	int temp = 0;
-	//The below two indexes are for neighbourhood pixels
-	int idx1=0;
-	int idx2=0;
-	// Correlation of sobel operator with image
-	for(int i=0; i<cols; i++)
-	{
-		for(int j=0; j<rows; j++)
-		{
-			
-			// When pixel is at top-left corner or along first column
-			if( (i == 0 && j == 0) || ( i!=(rows-1) && j==0 ))
-			{
-					idx1=i; idx2=j;
-					// Below two for loops are for accessing elements of kernel
-					for(int f=rows_kernel/2; f<rows_kernel; f++)
-					{
-						for(int k=cols_kernel/2; k<cols_kernel; k++)
-						{
-							temp += sobel_x[f][k] * img_gray[idx1][idx2];
-							idx2++;
-						}
-						idx1++;
-						idx2=0;
-					}
+    imshow("grad y",gradient_y);
+    waitKey(0);
 
-					gradient.at<i,j> = temp;
-			}
-
-			// When pixel is in first column 
-			if( j == 0 )
-			{
-
-			}
-
-			// When pixel is in last column
-			if( j == cols)
-			{
-
-			}
-
-			// When pixel is in first row
-			if( i == 0)
-			{
-
-			}
+    imshow("grad magnitude",gradient_f);
+    waitKey(0);	
 
 
-			// When pixel is in last row
-			if( i == rows )
-			{
-
-			}	
-
-
-		}
-	}
 
 	return 0;
 

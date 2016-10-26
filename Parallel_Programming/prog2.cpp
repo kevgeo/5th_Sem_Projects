@@ -57,7 +57,7 @@ void my_sobel(const Mat1b& src, Mat1s& dst, int direction)
     // Iterate on image 
     for (int r = 0; r < _src.rows-radius; ++r)
     {
-        for (int c = 0; c < _src.cols-radius; ++c)
+        for (int c = 0; c < _src.cols- radius; ++c)
         {
             short s = 0;
 

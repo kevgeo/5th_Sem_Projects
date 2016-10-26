@@ -24,10 +24,12 @@ int main()
 	//waitKey(0);
 
 	// Converting to grayscale
-	Mat img_gray;
-	cvtColor(img,img_gray,CV_RGB2GRAY);
+	Mat img_gray,image_gray;
+	cvtColor(img,image_gray,CV_RGB2GRAY);
+    GaussianBlur( image_gray, img_gray, Size(15,15), 3, 3 );
 
-	// Displaying grayscale image
+	
+    // Displaying grayscale image
 	imshow("Original Image",img_gray);
 	waitKey(0);
 
@@ -127,18 +129,22 @@ int main()
         {
             gradient_f.at<uchar>(i,j) = sqrt( pow(gradient_x.at<uchar>(i,j),2) + pow(gradient_y.at<uchar>(i,j),2) );  
         
-            if(gradient_f.at<uchar>(i,j) >max)
-                max = gradient_f.at<uchar>(i,j);
+             if(gradient_f.at<uchar>(i,j) >250)
+                gradient_f.at<uchar>(i,j) = 255;
+            else
+                gradient_f.at<uchar>(i,j) = 0;
         }
     }
     
     cout<<endl<<"Max:"<<max;
 
+    /*
     imshow("grad x",gradient_x);
 	waitKey(0);
 
     imshow("grad y",gradient_y);
     waitKey(0);
+    */
 
     imshow("grad magnitude",gradient_f);
     waitKey(0);	
