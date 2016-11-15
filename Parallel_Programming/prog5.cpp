@@ -20,18 +20,18 @@ int main()
 	Mat img = imread("1.jpg");
 
 	// Displaying image
-	//imshow("Original Image",img);
-	//waitKey(0);
+	imshow("Original Image",img);
+	waitKey(0);
 
 	// Converting to grayscale
-	Mat img_gray,image_gray;
-	cvtColor(img,image_gray,CV_RGB2GRAY);
-    GaussianBlur( image_gray, img_gray, Size(15,15), 3, 3 );
+	Mat img_gray,image_blur;
+	GaussianBlur( img, image_blur, Size(3,3), 3, 3);
+    cvtColor(image_blur,img_gray,CV_RGB2GRAY);
 
 	
     // Displaying grayscale image
-	imshow("Original Image",img_gray);
-	waitKey(0);
+	//imshow("Original Image",img_gray);
+	//waitKey(0);
 
 	
 	int cols = img_gray.cols;
@@ -40,7 +40,7 @@ int main()
 	// Creating sobel operator in x direction
 	int sobel_x[3][3] = {-1,0,1,-2,0,2,-1,0,1};
 	// Creating sobel operator in y direction
-	int sobel_y[3][3] = {1,2,1,0,0,0,-1,-2,-1};
+	int sobel_y[3][3] = {-1,-2,-1,0,0,0,1,2,1};
 
 
 	int radius = 1;
@@ -56,7 +56,7 @@ int main()
 
     int max=0;
 
-	// Conrrelation loop in x direction 
+	// Correlation loop in x direction 
     
     // Iterate on image 
     for (int r = radius; r < _src.rows - radius; ++r)
@@ -73,7 +73,7 @@ int main()
                     s += _src.at<uchar>(r + i, c + j) * sobel_x[i + radius][j + radius];
                 }
             }
-            gradient_x.at<uchar>(r - radius, c - radius) = s/8;
+            gradient_x.at<uchar>(r - radius, c - radius) = s/100;
 
             /*if(s>200)
             	gradient.at<uchar>(r - radius, c - radius) = 255;
@@ -82,6 +82,9 @@ int main()
             */    
         }
     }
+
+    Mat absGrad_x;
+    convertScaleAbs( gradient_x, absGrad_x );
 
     // Conrrelation loop in y direction 
     
@@ -100,9 +103,8 @@ int main()
                     s += _src.at<uchar>(r + i, c + j) * sobel_y[i + radius][j + radius];
                 }
             }
-            if(s>max)
-                max=s;
-            gradient_y.at<uchar>(r - radius, c - radius) = s/8;
+        
+            gradient_y.at<uchar>(r - radius, c - radius) = s/100;
 
             /*if(s>200)
                 gradient.at<uchar>(r - radius, c - radius) = 255;
@@ -112,17 +114,26 @@ int main()
         }
     }
 
-    ///cout<<endl<<"max:"<<max;
-    //cout<<img_gray.rows;
-    //cout<<endl<<_src.rows;
-    cout<<endl<<gradient_x.rows;
-    cout<<endl<<gradient_y.rows;
-    cout<<endl<<gradient_y.cols;
-    cout<<endl<<gradient_f.rows;
-    cout<<endl<<gradient_f.cols;
+    Mat absGrad_y;
+    convertScaleAbs( gradient_y, absGrad_y );
     
+    Mat absGrad =img_gray.clone(); ;
+    for(int i=0; i<absGrad_y.rows; i++)
+    {
+        for(int j=0; j<absGrad_y.cols; j++)
+        {
+            absGrad.at<uchar>(i,j) = sqrt( pow(absGrad_x.at<uchar>(i,j),2) + pow(absGrad_y.at<uchar>(i,j),2) );  
+        
+             if(absGrad.at<uchar>(i,j) >250)
+                absGrad.at<uchar>(i,j) = 255;
+            else
+                absGrad.at<uchar>(i,j) = 0;
+        }
+    }
     
-	//Calculating gradient magnitude
+
+
+    //Calculating gradient magnitude
     for(int i=0; i<gradient_f.rows; i++)
     {
         for(int j=0; j<gradient_f.cols; j++)
@@ -130,27 +141,43 @@ int main()
             gradient_f.at<uchar>(i,j) = sqrt( pow(gradient_x.at<uchar>(i,j),2) + pow(gradient_y.at<uchar>(i,j),2) );  
         
              if(gradient_f.at<uchar>(i,j) >250)
-                gradient_f.at<uchar>(i,j) = 255;
+                gradient_f.at<uchar>(i,j) = 150;
             else
                 gradient_f.at<uchar>(i,j) = 0;
+                
         }
     }
     
-    cout<<endl<<"Max:"<<max;
+   
 
     /*
     imshow("grad x",gradient_x);
 	waitKey(0);
 
+    
     imshow("grad y",gradient_y);
     waitKey(0);
     */
 
-    imshow("grad magnitude",gradient_f);
+    //imshow("grad magnitude",gradient_f);
+    //waitKey(0);
+
+    imshow("absolute grad magnitude",absGrad);
     waitKey(0);	
-
-
-
+    
+    
+    /*cv::Mat Gx, Gy; int ksize=3;
+    Mat abs_grad_x, abs_grad_y;
+    cv::Sobel(img_gray, Gx, CV_8U, 1, 0, ksize);
+    convertScaleAbs( Gx, abs_grad_x );
+    cv::Sobel(img_gray, Gy, CV_8U, 0, 1, ksize);
+    convertScaleAbs( Gy, abs_grad_y );
+    Mat grad;
+    addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, grad );
+    */
+    //imshow("Sobel Image",grad);
+    //waitKey(0);
+    
 	return 0;
 
 }
