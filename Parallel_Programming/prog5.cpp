@@ -10,16 +10,24 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <opencv2/objdetect/objdetect.hpp>
 #include <math.h>
+#include <omp.h>     
 
 using namespace cv; 
 using namespace std; 
 
 int main()
 {
-	// Reading image
-	Mat img = imread("1.jpg");
+    string filename;
+    cout<<"Enter filename:";
+    cin>> filename;
+    int normalize_val=8;    
+    cout<<"\nEnter normalization value:";
+    cin>> normalize_val;
 
-	// Displaying image
+	// Reading image
+    Mat img = imread(filename);
+
+    // Displaying image
 	imshow("Original Image",img);
 	waitKey(0);
 
@@ -59,36 +67,48 @@ int main()
 	// Correlation loop in x direction 
     
     // Iterate on image 
-    for (int r = radius; r < _src.rows - radius; ++r)
-    {
-        for (int c = radius; c < _src.cols - radius; ++c)
-        {
-            int s = 0;
+    int r,c,i,j,s;
+    cout<<_src.rows;
+    double start,end,diff;
+    start = omp_get_wtime();
 
-            // Iterate on kernel
-            for (int i = -radius; i <= radius; ++i)
+            for (r = radius; r < _src.rows - radius; ++r)
             {
-                for (int j = -radius; j <= radius; ++j)
+                for (c = radius; c < _src.cols - radius; ++c)
                 {
-                    s += _src.at<uchar>(r + i, c + j) * sobel_x[i + radius][j + radius];
+                    s = 0;
+
+                    // Iterate on kernel
+                    //#pragma omp parallel for  default(shared)  private(r,c,i,j) num_threads(3) ordered collapse(2) schedule(static,3)
+                    for (i = -radius; i <= radius; ++i)
+                    {
+                        for (j = -radius; j <= radius; ++j)
+                        {
+                            s += _src.at<uchar>(r + i, c + j) * sobel_x[i + radius][j + radius];
+                        }
+                    }
+                    gradient_x.at<uchar>(r - radius, c - radius) = s/normalize_val;
+
+                    /*if(s>200)
+                    	gradient.at<uchar>(r - radius, c - radius) = 255;
+                    else
+                      	gradient.at<uchar>(r - radius, c - radius) = 0;
+                    */    
                 }
             }
-            gradient_x.at<uchar>(r - radius, c - radius) = s/100;
 
-            /*if(s>200)
-            	gradient.at<uchar>(r - radius, c - radius) = 255;
-            else
-              	gradient.at<uchar>(r - radius, c - radius) = 0;
-            */    
-        }
-    }
+        end = omp_get_wtime();
+        diff = end - start;
+        cout<<"serial code time:"<<diff;
+
 
     Mat absGrad_x;
     convertScaleAbs( gradient_x, absGrad_x );
 
     // Conrrelation loop in y direction 
     
-    // Iterate on image 
+    // Iterate on image
+    //#pragma omp parallel for  default(shared)  private(r,c,i,j) num_threads(800) ordered schedule(static,3) collapse(2) 
     for (int r = radius; r < _src.rows - radius; ++r)
     {
         for (int c = radius; c < _src.cols - radius; ++c)
@@ -104,7 +124,7 @@ int main()
                 }
             }
         
-            gradient_y.at<uchar>(r - radius, c - radius) = s/100;
+            gradient_y.at<uchar>(r - radius, c - radius) = s/normalize_val;
 
             /*if(s>200)
                 gradient.at<uchar>(r - radius, c - radius) = 255;
@@ -159,11 +179,11 @@ int main()
     waitKey(0);
     */
 
-    //imshow("grad magnitude",gradient_f);
-    //waitKey(0);
+    imshow("grad magnitude",gradient_f);
+    waitKey(0);
 
-    imshow("absolute grad magnitude",absGrad);
-    waitKey(0);	
+    //imshow("absolute grad magnitude",absGrad);
+    //waitKey(0);	
     
     
     /*cv::Mat Gx, Gy; int ksize=3;

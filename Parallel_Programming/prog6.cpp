@@ -10,15 +10,20 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <opencv2/objdetect/objdetect.hpp>
 #include <math.h>
+#include <omp.h>
 
 using namespace cv; 
 using namespace std; 
 
 int main()
 {
-    // Reading image
-    Mat img = imread("pf.jpg");
+    string filename;
+    cout<<"Enter filename:";
+    cin>> filename;
 
+
+    // Reading image
+    Mat img = imread(filename);
     // Displaying image
     //imshow("Original Image",img);
     //waitKey(0);
@@ -62,7 +67,9 @@ int main()
     float theta; // Calculate intensity gradient vector theta=atan2(Gy,Gx);
     Mat nonMaxSupp= Mat(grad.rows-2, grad.cols-2, CV_8UC1); //CV_8UC1 is 8-bit single channel image i.e grayscale
     
-    
+    double start,end,diff;
+    start = omp_get_wtime();
+
     for(int i=1; i<Gx.rows-1; i++)
     {
         for(int j=1; j<Gx.cols-1; j++)
@@ -113,7 +120,10 @@ int main()
         }
 
     }
-    
+    end = omp_get_wtime();
+    diff = end-start;
+    cout<<"\nserial code time:"<<diff<<endl;
+
     //cout<<endl<<"max"<<max;
     imshow("Non-Maximum Surpression",nonMaxSupp);
     waitKey(0);
@@ -188,6 +198,8 @@ int main()
         }
     }
     
+
+
     imshow("Hysterisis Thresholding",EdgeMat);
     waitKey(0);
 

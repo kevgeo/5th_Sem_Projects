@@ -26,7 +26,7 @@ int main()
     // Converting to grayscale
     Mat img_gray,image_gray;
     cvtColor(img,image_gray,CV_RGB2GRAY);
-    GaussianBlur( image_gray, img_gray, Size(15,15), 3, 3);
+    GaussianBlur( image_gray, img_gray, Size(3,3), 3, 3);
 
     
     // Displaying grayscale image
@@ -72,7 +72,7 @@ int main()
                     s += _src.at<uchar>(r + i, c + j) * sobel_x[i + radius][j + radius];
                 }
             }
-            gradient_x.at<uchar>(r - radius, c - radius) = s/8;
+            gradient_x.at<uchar>(r - radius, c - radius) = s/100;
 
             /*if(s>200)
                 gradient.at<uchar>(r - radius, c - radius) = 255;
@@ -99,7 +99,7 @@ int main()
                     s += _src.at<uchar>(r + i, c + j) * sobel_y[i + radius][j + radius];
                 }
             }
-            gradient_y.at<uchar>(r - radius, c - radius) = s/8;
+            gradient_y.at<uchar>(r - radius, c - radius) = s/100;
 
             /*if(s>200)
                 gradient.at<uchar>(r - radius, c - radius) = 255;
